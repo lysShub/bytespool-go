@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"slices"
 	"testing"
+	"unsafe"
 )
 
 type Object struct{ A, B int16 }
@@ -115,5 +116,20 @@ func Test_newPoolIdx(t *testing.T) {
 				t.Fatalf("previous class size %d >= requested %d", classToSize[idx-1], bytes)
 			}
 		}
+	}
+}
+
+func Test_Alignment(t *testing.T) {
+	for _, sz := range classToSize {
+		n := int(sz) - hdrsize
+		if n <= 0 {
+			continue
+		}
+		s := Get[[]byte, byte](n)
+		p := unsafe.Pointer(unsafe.SliceData(s))
+		if uintptr(p)%8 != 0 {
+			t.Fatalf("pool size %d: block pointer %p not 8-aligned", sz, p)
+		}
+		Put[[]byte, byte](s)
 	}
 }
