@@ -82,3 +82,12 @@ jobs:
       - run: go vet -tags debug ./...
       - run: go test ./...
       - run: go test -tags debug ./...
+
+  checks-done:
+    needs: [versions, lint, test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: test "${{ needs.versions.result }}" = success
+      - run: test "${{ needs.lint.result }}" = success
+      - run: test "${{ needs.test.result }}" = success
