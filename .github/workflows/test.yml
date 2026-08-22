@@ -6,14 +6,53 @@ on:
   pull_request:
 
 jobs:
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      go: ${{ steps.gen.outputs.go }}
+    steps:
+      - name: list stable go versions >= min
+        id: gen
+        env:
+          GO_MIN_VERSION: "1.21"
+        run: |
+          python3 - <<'PY'
+          import json, os, re, urllib.request
+
+          minv = tuple(int(x) for x in os.environ["GO_MIN_VERSION"].split("."))
+          req = urllib.request.Request(
+              "https://go.dev/dl/?mode=json&include=all",
+              headers={"User-Agent": "curl/8"},
+          )
+          data = json.load(urllib.request.urlopen(req))
+          pat = re.compile(r"^go(\d+)\.(\d+)\.(\d+)$")
+          out, seen = [], set()
+          for item in data:
+              if not item.get("stable"):
+                  continue
+              m = pat.match(item["version"])
+              if not m:
+                  continue
+              v = tuple(map(int, m.groups()))
+              if v[: len(minv)] < minv:
+                  continue
+              key = v[:2]
+              if key in seen:
+                  continue
+              seen.add(key)
+              out.append("%d.%d.%d" % v)
+          with open(os.environ["GITHUB_OUTPUT"], "a") as f:
+              f.write("go=%s\n" % json.dumps(out))
+          PY
+
   test:
+    needs: versions
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest, macos-latest]
-        go:
-          ["1.21.x", "1.22.x", "1.23.x", "1.24.x", "1.25.x", "1.26.x", "1.27.x"]
+        go: ${{ fromJson(needs.versions.outputs.go) }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-go@v6
