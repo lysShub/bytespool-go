@@ -45,6 +45,25 @@ jobs:
               f.write("go=%s\n" % json.dumps(out))
           PY
 
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-go@v6
+        with:
+          go-version-file: go.mod
+          cache: true
+      - run: go install golang.org/x/tools/cmd/goimports@v0.24.0
+      - run: go install honnef.co/go/tools/cmd/staticcheck@v0.4.7
+      - run: go mod tidy
+      - run: staticcheck ./...
+      - run: staticcheck -tags debug ./...
+      - run: goimports -w .
+      - run: go vet ./...
+      - run: go vet -tags debug ./...
+      - run: go fmt ./...
+      - run: git diff --exit-code
+
   test:
     needs: versions
     runs-on: ${{ matrix.os }}
@@ -59,7 +78,16 @@ jobs:
         with:
           go-version: ${{ matrix.go }}
           cache: true
-
       - run: go vet ./...
       - run: go vet -tags debug ./...
+      - run: go test ./...
       - run: go test -tags debug ./...
+
+  checks-done:
+    needs: [versions, lint, test]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - run: test "${{ needs.versions.result }}" = success
+      - run: test "${{ needs.lint.result }}" = success
+      - run: test "${{ needs.test.result }}" = success
