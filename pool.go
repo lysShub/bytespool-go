@@ -28,8 +28,8 @@ func fetch[T []e | *e, e any](clr bool, n ...int) T {
 	var w = int(unsafe.Sizeof(*new(e)))
 
 	if unsafe.Sizeof(*new(T)) == unsafe.Sizeof(uintptr(0)) {
-		// object
-		if Debug && len(n) > 0 {
+		// object can't specified n
+		if len(n) > 0 {
 			panic(n[0])
 		}
 		p, _ := get(w, clr)

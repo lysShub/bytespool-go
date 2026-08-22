@@ -101,7 +101,7 @@ var (
 )
 
 func newPoolIdx(bytes int) poolIdx {
-	if Debug && bytes < hdrsize {
+	if bytes < hdrsize {
 		panic(bytes)
 	}
 	if bytes <= middleSizeMax {
@@ -127,7 +127,7 @@ func newPoolIdx(bytes int) poolIdx {
 	return poolIdxExceed
 }
 func (p poolIdx) bytes() int {
-	if Debug && p >= poolIdxExceed {
+	if p >= poolIdxExceed {
 		panic(p)
 	}
 	return int(classToSize[p])
