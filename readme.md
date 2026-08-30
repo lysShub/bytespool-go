@@ -8,7 +8,7 @@ bytespool is a generic memory pool built on top of `sync.Pool`. It reuses `[]T` 
 - **easy `Put`**: pass only the head pointer of the memory to `Put`
 - **concurrency**: the pool is safe for concurrent use
 - **aligned**: block sizes are aligned with Go's runtime size classes
-- **debug mode**: build with `-tags debug` to detect misuse (via slog.Debug):
+- **debug mode**: build with `-tags debug` to detect misuse (via slog.Warn):
   1. double `Put`
   2. invalid `Put`
   3. `Put` after GC

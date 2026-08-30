@@ -119,7 +119,7 @@ func debug_log_put_invalid(ptr uintptr) {
 }
 
 var DebugLog func(msg string, attrs ...slog.Attr) = func(msg string, attrs ...slog.Attr) {
-	slog.LogAttrs(context.Background(), slog.LevelDebug, msg, attrs...)
+	slog.LogAttrs(context.Background(), slog.LevelWarn, msg, attrs...)
 }
 
 func log(msg string, attrs ...slog.Attr) { DebugLog(msg, attrs...) }
