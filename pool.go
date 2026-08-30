@@ -27,15 +27,15 @@ const (
 func fetch[T []e | *e, e any](clr bool, n ...int) T {
 	var w = int(unsafe.Sizeof(*new(e)))
 
+	// zero cost generic specialization
 	if unsafe.Sizeof(*new(T)) == unsafe.Sizeof(uintptr(0)) {
-		// object can't specified n
 		if len(n) > 0 {
-			panic(n[0])
+			panic(n[0]) // object can't specified n
 		}
 		p, _ := get(w, clr)
 		return *(*T)(unsafe.Pointer(&p))
-	} else {
-		// slice
+
+	} else { // slice
 		var bytes = 0
 		if len(n) > 0 {
 			bytes = w * n[0]

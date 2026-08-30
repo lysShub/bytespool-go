@@ -15,7 +15,7 @@ const Debug = true
 
 var (
 	mu      sync.RWMutex
-	records = map[uintptr]*Record{} // ptr --> *Record
+	records = map[uintptr]*DebugRecord{} // ptr --> *Record
 )
 
 func DebugLength() int {
@@ -30,7 +30,7 @@ func DebugClear() {
 	mu.Unlock()
 }
 
-func DebugRange(fn func(record *Record) (next bool)) {
+func DebugRange(fn func(record *DebugRecord) (next bool)) {
 	mu.RLock()
 	defer mu.RUnlock()
 	for _, r := range records {
@@ -40,19 +40,19 @@ func DebugRange(fn func(record *Record) (next bool)) {
 	}
 }
 
-type Record struct {
+type DebugRecord struct {
 	Ptr uintptr
 	Idx poolIdx
 	Pcs [64]uintptr
 }
 
-func newRecord(ptr uintptr, idx poolIdx) *Record {
-	r := &Record{Ptr: ptr, Idx: idx}
+func newRecord(ptr uintptr, idx poolIdx) *DebugRecord {
+	r := &DebugRecord{Ptr: ptr, Idx: idx}
 	runtime.Callers(2, r.Pcs[:])
 	return r
 }
 
-func (r *Record) LogValue() slog.Value {
+func (r *DebugRecord) LogValue() slog.Value {
 	fs := runtime.CallersFrames(r.Pcs[:])
 	frames := make([]string, 0, 8)
 	for {
@@ -118,6 +118,8 @@ func debug_log_put_invalid(ptr uintptr) {
 	log("bytespool put invalid", slog.Uint64("ptr", uint64(ptr)), slog.Any("stack", newRecord(0, 0)))
 }
 
-func log(msg string, attrs ...slog.Attr) {
-	slog.LogAttrs(context.Background(), slog.LevelWarn, msg, attrs...)
+var DebugLog func(msg string, attrs ...slog.Attr) = func(msg string, attrs ...slog.Attr) {
+	slog.LogAttrs(context.Background(), slog.LevelDebug, msg, attrs...)
 }
+
+func log(msg string, attrs ...slog.Attr) { DebugLog(msg, attrs...) }
