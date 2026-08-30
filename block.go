@@ -38,7 +38,30 @@ func (b *Block[T]) Put(s []T) *Block[T] {
 	return b
 }
 
-// Set sets the length to n; if reserve is set, keep the original data when reallocating.
+// Append append elements to the tail
+func (b *Block[T]) Append(e ...T) {
+	old := b.len
+	b.Set(old+len(e), true)
+	copy(b.Raw()[old:], e)
+}
+
+// Raw returns the underlying slice.
+func (b *Block[T]) Raw() []T {
+	if b.ptr == nil {
+		return nil
+	}
+	return unsafe.Slice((*T)(b.ptr), b.cap)[:b.len]
+}
+
+// String wrap to unsafe string, for immediately read-only operate: compare, sort, etc.
+func (b *Block[T]) String() string {
+	s := b.Raw()
+	ptr := (*byte)(unsafe.Pointer(unsafe.SliceData(s)))
+	len := len(s) * int(unsafe.Sizeof(*new(T)))
+	return unsafe.String(ptr, len)
+}
+
+// Set sets the length to n. if reserve is set, keep the original data when reallocating.
 func (b *Block[T]) Set(n int, reserve ...bool) *Block[T] {
 	if n < 0 {
 		panic(n)
@@ -47,12 +70,12 @@ func (b *Block[T]) Set(n int, reserve ...bool) *Block[T] {
 		b.alloc(n, reserve...)
 		return b
 	}
+
 	if n*2 <= b.cap {
 		b.cnt++
 	} else {
 		b.cnt = 0
 	}
-
 	if b.cnt > 128 {
 		b.alloc(n, reserve...)
 	} else {
@@ -77,12 +100,4 @@ func (b *Block[T]) alloc(n int, reserved ...bool) {
 	if len(old) > 0 {
 		copy(b.Raw(), old)
 	}
-}
-
-// Raw returns the underlying slice.
-func (b *Block[T]) Raw() []T {
-	if b.ptr == nil {
-		return nil
-	}
-	return unsafe.Slice((*T)(b.ptr), b.cap)[:b.len]
 }

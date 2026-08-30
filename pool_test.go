@@ -3,6 +3,8 @@ package bytespool
 import (
 	"bytes"
 	"crypto/rand"
+	"fmt"
+	"runtime"
 	"slices"
 	"testing"
 	"unsafe"
@@ -131,5 +133,32 @@ func Test_Alignment(t *testing.T) {
 			t.Fatalf("pool size %d: block pointer %p not 8-aligned", sz, p)
 		}
 		Put[[]byte, byte](s)
+	}
+}
+
+func Benchmark_Pool(b *testing.B) {
+	var r1, r2 float64
+	var procs = runtime.GOMAXPROCS(0)
+
+	b.Run("serialization", func(b *testing.B) {
+		for i := 0; i < b.N; i++ {
+			s := Get[[]byte, byte](111)
+			Put[[]byte, byte](s)
+		}
+		r1 = float64(b.Elapsed()) / float64(b.N)
+	})
+	b.Run(fmt.Sprintf("parallel___%d", procs), func(b *testing.B) {
+		b.RunParallel(func(pb *testing.PB) {
+			for pb.Next() {
+				s := Get[[]byte, byte](111)
+				Put[[]byte, byte](s)
+			}
+		})
+		r2 = float64(b.Elapsed()) / float64(b.N)
+	})
+
+	// validate global singleton [sync.Pool] would not be bottleneck
+	if r2 > r1*1.5 {
+		b.Fatal("parallel bottleneck")
 	}
 }
