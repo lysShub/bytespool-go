@@ -11,8 +11,6 @@ import (
 	"sync"
 )
 
-const Debug = true
-
 var (
 	mu      sync.RWMutex
 	records = map[uintptr]*DebugRecord{} // ptr --> *Record

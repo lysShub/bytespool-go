@@ -2,6 +2,8 @@ package bytespool
 
 import (
 	"unsafe"
+
+	"github.com/lysShub/debug-go"
 )
 
 // Get returns a pool-backed slice or object of type T. The memory is not zeroed.
@@ -64,7 +66,7 @@ func get(bytes int, clr bool) (p unsafe.Pointer, c int) {
 
 	idx := newPoolIdx(bytes)
 	if idx > maxPoolIdx {
-		if Debug {
+		if debug.Debug() {
 			debug_log_get_exceed(bytes)
 		}
 		// block larger than the largest pool, allocate directly
@@ -79,7 +81,7 @@ func get(bytes int, clr bool) (p unsafe.Pointer, c int) {
 
 		enc(p, idx)
 	}
-	if Debug {
+	if debug.Debug() {
 		debug_get(uintptr(p), idx)
 	}
 
@@ -93,7 +95,7 @@ func get(bytes int, clr bool) (p unsafe.Pointer, c int) {
 
 func put(ptr unsafe.Pointer) {
 	if ptr == nil {
-		if Debug {
+		if debug.Debug() {
 			debug_log_put_nil()
 		}
 		return
@@ -102,11 +104,11 @@ func put(ptr unsafe.Pointer) {
 	ptr = unsafe.Add(ptr, -hdrsize)
 	ok, i := dec(ptr)
 	if !ok {
-		if Debug {
+		if debug.Debug() {
 			debug_log_put_invalid(uintptr(ptr))
 		}
 	} else {
-		if Debug {
+		if debug.Debug() {
 			debug_put(uintptr(ptr), i)
 		}
 		if i <= maxPoolIdx {
