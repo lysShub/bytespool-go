@@ -5,8 +5,6 @@ package bytespool
 
 import "log/slog"
 
-const Debug = false
-
 type DebugRecord struct{}
 
 func DebugLength() int                                    { return 0 }
